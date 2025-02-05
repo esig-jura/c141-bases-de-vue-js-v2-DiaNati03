@@ -10,35 +10,41 @@
         max-width="500"
       >
         <v-text-field
+          v-model="newTask"
           label="Nouvelle tâche"
           clearable
+          @keyup.enter="addTask"
         >
           <template v-slot:append-inner>
-            <v-btn>Ajouter</v-btn>
+            <v-btn @click="addTask">Ajouter</v-btn>
           </template>
         </v-text-field>
 
-        <v-card-title>Liste des tâches</v-card-title>
+        <div v-if="trierTasks.length > 0">
+          <v-card-title v-for="(task, index) in trierTasks" :key="index">
+            {{ index }} - {{ task.title }}
+          </v-card-title>
+        </div>
 
-        <v-card-subtitle>
+        <v-card-subtitle v-else>
           Il n'y a pas de tâches... chanceux ! 😄
         </v-card-subtitle>
 
         <v-list>
-          <v-list-item>
+          <v-list-item v-for="(task, index) in trierTasks" :key="index">
             <template v-slot:prepend>
               <v-list-item-action start>
-                <v-checkbox-btn />
+                <v-checkbox-btn v-model="task.completed"/>
               </v-list-item-action>
             </template>
 
-            <v-list-item-title>
-              *** Titre de la tâche ***
+            <v-list-item-title :class="{done: task.completed}">
+              {{ task.title }}
             </v-list-item-title>
 
             <v-list-item-subtitle>
-              Créé le *** Date ***
-              à *** Heure ***
+              Créé le {{ new Date(task.date).toLocaleDateString() }}
+              à {{ new Date(task.date).toLocaleTimeString() }}
             </v-list-item-subtitle>
           </v-list-item>
         </v-list>
@@ -51,7 +57,7 @@
 // Importation du composant ExerciceObjectifs
 import ExerciceObjectifs from "@/components/ExerciceObjectifs.vue";
 // Importation de la fonction réactive ref
-import {ref} from 'vue';
+import {ref, computed, watch} from 'vue';
 
 // Tableau réactif de tâches
 const tasks = ref([
@@ -72,12 +78,12 @@ const tasks = ref([
   }
 ]);
 // Nouvelle tâche à ajouter
-const newTask = ref("*** Nouvelle tâche ***");
+const newTask = ref("");
 
 /**
  * Fonction qui ajoute une nouvelle tâche à la liste.
  */
-function addTask () {
+function addTask() {
   // Ajout de la nouvelle tâche
   tasks.value.push({
     "title": newTask.value,
@@ -87,8 +93,23 @@ function addTask () {
   // Réinitialisation de la saisie
   newTask.value = "";
 }
+
+// Propriété calculée pour trier les tâches par date (la plus récente en premier)
+const trierTasks = computed(() => {
+  return tasks.value.sort((a, b) => a.date - b.date);
+});
+
+// Watcher pour surveiller la saisie utilisateur et supprimer les tâches si "delete" est saisi
+watch(newTask, (newValue) => {
+  if (newValue.toLowerCase() === 'delete') {
+    tasks.value = []; // Réinitialiser la liste des tâches
+    newTask.value = ''; // Réinitialiser la saisie de texte
+  }
+});
+
 </script>
 
 <style scoped lang="sass">
-
+.done
+  text-decoration: line-through
 </style>
